@@ -36,6 +36,8 @@ class Sensei_Email_Teacher_New_Course_Assignment {
 	function __construct() {
 
         $this->template = 'teacher-new-course-assignment';
+		$this->subject = apply_filters( 'sensei_email_subject', sprintf( __( '[%1$s] You have been assigned to a course', 'woothemes-sensei' ), get_bloginfo( 'name' ) ), $this->template );
+		$this->heading = apply_filters( 'sensei_email_heading', __( 'Course assigned to you', 'woothemes-sensei' ), $this->template );
         return;
 	}
 
@@ -52,11 +54,8 @@ class Sensei_Email_Teacher_New_Course_Assignment {
 
 		$this->teacher = new WP_User( $teacher_id );
         $this->recipient = stripslashes( $this->teacher->user_email );
-        do_action('sensei_before_mail', $this->recipient);
-				
-		$this->heading = apply_filters( 'sensei_email_heading', __( 'Course assigned to you', 'woothemes-sensei' ), $this->template );
-        $this->subject = apply_filters( 'sensei_email_subject', __( 'New course assigned to you', 'woothemes-sensei' ), $this->template );
- 
+        $this->subject = __( 'New course assigned to you', 'woothemes-sensei' );
+
         //course edit link
         $course_edit_link = admin_url('post.php?post=' . $course_id . '&action=edit' );
 
@@ -74,8 +73,6 @@ class Sensei_Email_Teacher_New_Course_Assignment {
 
 		// Send mail
 		Sensei()->emails->send( $this->recipient, $this->subject, Sensei()->emails->get_content( $this->template ) );
-
-		do_action('sensei_after_sending_email');
 	}
 }
 

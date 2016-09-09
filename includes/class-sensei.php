@@ -325,9 +325,6 @@ class Sensei_Main {
         // Load Learner Profiles Class
         $this->learner_profiles = new Sensei_Learner_Profiles();
 
-        // Load WPML compatibility class
-        $this->Sensei_WPML = new Sensei_WPML();
-
     }
 
     /**

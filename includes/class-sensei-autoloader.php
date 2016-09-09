@@ -98,11 +98,6 @@ class Sensei_Autoloader {
              */
             'Sensei_WC' => 'class-sensei-wc.php',
 
-            /**
-            * WPML
-            */
-            'Sensei_WPML' => 'wpml/class-sensei-wpml.php'
-
         );
     }
 
