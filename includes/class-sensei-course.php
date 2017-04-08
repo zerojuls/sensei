@@ -2359,15 +2359,16 @@ class Sensei_Course {
 
         // setup the currently selected item
         $selected = 'newness';
-        if( isset( $_GET['orderby'] ) ){
-
-            $selected =  $_GET[ 'orderby' ];
-
+        if( isset( $_GET['course-orderby'] ) ) {
+			$ordering = trim( $_GET[ 'course-orderby' ] );
+			if ( in_array( $ordering, array_keys( $course_order_by_options ) ) ) {
+				$selected =  $ordering;
+			}
         }
 
         ?>
 
-        <form class="sensei-ordering" name="sensei-course-order" action="<?php echo esc_attr( Sensei_Utils::get_current_url() ) ; ?>" method="POST">
+        <form class="sensei-ordering" name="sensei-course-order" action="<?php echo esc_attr( Sensei_Utils::get_current_url() ) ; ?>" method="GET">
             <select name="course-orderby" class="orderby">
                 <?php
                 foreach( $course_order_by_options as $value => $text ){
@@ -2467,7 +2468,7 @@ class Sensei_Course {
      */
     public static function course_archive_order_by_title( $query ){
 
-        if( isset ( $_POST[ 'course-orderby' ] ) && 'title '== $_POST['course-orderby']
+        if( isset ( $_GET[ 'course-orderby' ] ) && 'title '== $_GET['course-orderby']
             && 'course'== $query->get('post_type') && $query->is_main_query()  ){
             // setup the order by title for this query
             $query->set( 'orderby', 'title'  );
