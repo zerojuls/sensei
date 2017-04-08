@@ -11,8 +11,11 @@ if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly
  * @since 1.0.0
  */
 class Sensei_Course {
+	const COURSE_SORT_BY_NONE = 'none';
+	const COURSE_SORT_BY_NEWNESS = 'newness';
+	const COURSE_SORT_BY_TITLE = 'title';
 
-    /**
+	/**
      * @var $token
      */
 	public $token;
@@ -2353,16 +2356,17 @@ class Sensei_Course {
          * }
          */
         $course_order_by_options = apply_filters( 'sensei_archive_course_order_by_options', array(
-            "newness"     => __( "Sort by newest first", "woothemes-sensei"),
-            "title"       => __( "Sort by title A-Z", "woothemes-sensei" ),
+			self::COURSE_SORT_BY_NONE    => __( 'Choose sorting', 'woothemes-sensei' ),
+            self::COURSE_SORT_BY_NEWNESS => __( 'Sort by newest first', 'woothemes-sensei' ),
+            self::COURSE_SORT_BY_TITLE => __( 'Sort by title A-Z', 'woothemes-sensei' ),
         ));
 
         // setup the currently selected item
-        $selected = 'newness';
+        $selected = self::COURSE_SORT_BY_NONE;
         if( isset( $_GET['course-orderby'] ) ) {
 			$ordering = trim( $_GET[ 'course-orderby' ] );
 			if ( in_array( $ordering, array_keys( $course_order_by_options ) ) ) {
-				$selected =  $ordering;
+				$selected = $ordering;
 			}
         }
 
@@ -2371,10 +2375,8 @@ class Sensei_Course {
         <form class="sensei-ordering" name="sensei-course-order" action="<?php echo esc_attr( Sensei_Utils::get_current_url() ) ; ?>" method="GET">
             <select name="course-orderby" class="orderby">
                 <?php
-                foreach( $course_order_by_options as $value => $text ){
-
-                    echo '<option value="'. $value . ' "' . selected( $selected, $value, false ) . '>'. $text. '</option>';
-
+                foreach( $course_order_by_options as $value => $text ) {
+                    echo '<option value="'. esc_attr( $value ) . '"' . selected( $selected, $value, false ) . '>'. esc_html( $text ) . '</option>';
                 }
                 ?>
             </select>
@@ -2466,14 +2468,25 @@ class Sensei_Course {
      * @param WP_Query $query
      * @return WP_Query $query
      */
-    public static function course_archive_order_by_title( $query ){
-
-        if( isset ( $_GET[ 'course-orderby' ] ) && 'title '== $_GET['course-orderby']
-            && 'course'== $query->get('post_type') && $query->is_main_query()  ){
-            // setup the order by title for this query
-            $query->set( 'orderby', 'title'  );
-            $query->set( 'order', 'ASC'  );
-        }
+    public static function course_archive_order_by_title( $query ) {
+		if ( false === ( 'course'== $query->get('post_type') && $query->is_main_query() ) ) {
+			return $query;
+		}
+		$ordering = self::COURSE_SORT_BY_NONE;
+		if ( isset( $_GET[ 'course-orderby' ] ) ) {
+			$ordering = trim( $_GET[ 'course-orderby' ] );
+		}
+		if ( self::COURSE_SORT_BY_TITLE === $ordering ) {
+			$query->set( 'orderby', 'title' );
+			$query->set( 'order', 'ASC' );
+		}
+		if ( self::COURSE_SORT_BY_NONE === $ordering ) {
+			$stored_order = get_option( 'sensei_course_order', '' );
+			if ( ! empty( $stored_order ) ) {
+				$query->set( 'orderby', 'menu_order'  );
+				$query->set( 'order', 'ASC'  );
+			}
+		}
 
         return $query;
     }
