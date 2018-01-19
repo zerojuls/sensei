@@ -1,0 +1,79 @@
+version: 2.0
+
+# Shared config
+.create_db: &cmd_create_db
+  command: mysql -e 'CREATE DATABASE wordpress_test;' -uroot
+
+jobs:
+  build:
+    docker:
+      - image: circleci/php:latest
+
+    environment: &shared_env
+      CIRCLE_ENV: test
+      WP_MULTISITE: 0
+      WP_CORE_DIR: ~/wordpress-develop
+      WP_TESTS_DIR: ~/wordpress-develop/tests/phpunit
+      SENSEI_CODING_STANDARD_DIR: ~/sensei_coding_standard
+      plugin_loc: ~/$CIRCLE_PROJECT_REPONAME
+      plugin_slug: $CIRCLE_PROJECT_REPONAME
+      plugin_dir: ~/wordpress-develop/src/wp-content/plugins/$plugin_slug
+      plugin_tests_dir: ~/wordpress-develop/src/wp-content/plugins/$plugin_slug/tests
+      TZ: "/usr/share/zoneinfo/America/Los_Angeles"
+
+    steps:
+      - checkout
+      # Install phpenv
+      - run: git clone git://github.com/phpenv/phpenv.git ~/.phpenv
+      - run: echo 'export PATH="$HOME/.phpenv/bin:$PATH"' >> ~/.bash_profile
+      - run: echo 'eval "$(phpenv init -)"' >> ~/.bash_profile
+      - run: cat ~/.bash_profile
+      - run: source ~/.bash_profile
+      #enable xdebug. LINE 1/2 to uncomment if you want to run a code coverage report.
+      - run: sed -i 's/^;//' ~/.phpenv/versions/$(phpenv global)/etc/conf.d/xdebug.ini
+      #setup WP install
+      - run: git clone git://develop.git.wordpress.org/ $WP_CORE_DIR;
+      - run: cd $WP_CORE_DIR && cp wp-tests-config-sample.php wp-tests-config.php && sed -i "s/youremptytestdbnamehere/wordpress_test/" wp-tests-config.php && sed -i "s/yourusernamehere/root/" wp-tests-config.php && sed -i "s/yourpasswordhere//" wp-tests-config.php;
+      # setup phpunit
+      - run: wget https://phar.phpunit.de/phpunit-6.phar && chmod +x phpunit-6.phar && mv phpunit-6.phar ~/.phpenv/shims/phpunit
+      #Sensei Specific remove npm file as it is not needed
+      # Clone sensei-coding-standard
+      - run: git clone https://github.com/Automattic/sensei-coding-standard.git $SENSEI_CODING_STANDARD_DIR;
+        #- save_cache:
+        #- key: v1-build-{{ .Environment.CIRCLE_SHA1 }}
+        #- paths:
+        #-   - ~/wordpress-develop
+        #-   - ~/sensei_coding_standard
+        #-   - ~/.phpenv/shims/phpunit
+
+  test_phpcs:
+    docker:
+      - image: circleci/php:latest
+    steps:
+      - run: *cmd_create_db
+      - run:
+        command: |
+          cd $SENSEI_CODING_STANDARD_DIR
+          php bin/phpcs.phar --report-full --report-summary --standard=Sensei $CIRCLE_WORKING_DIRECTORY
+
+  test_phpunit:
+    docker:
+      - image: circleci/php:latest
+    steps:
+      - run: *cmd_create_db
+      - run:
+        command: |
+          cd $CIRCLE_WORKING_DIRECTORY
+          phpunit #ignoring coverage for speed reasons: --coverage-html $CIRCLE_ARTIFACTS
+
+workflows:
+  version: 2.0
+  build-and-test:
+    jobs:
+      - build
+      - test_phpcs:
+        requires:
+          - build
+      - test_phpunit:
+        requires:
+          - build
