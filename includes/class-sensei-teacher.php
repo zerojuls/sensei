@@ -1319,7 +1319,7 @@ class Sensei_Teacher {
 			$teacher = intval( get_current_user_id() );
 
 			if ( $teacher ) {
-				$request['author__in'] = array( $teacher );
+				$request['author__in'] = array( 0, $teacher );
 			}
 		}
 
@@ -1345,7 +1345,7 @@ class Sensei_Teacher {
 		$teacher = intval( get_current_user_id() );
 
 		if ( $teacher ) {
-			$query['author__in'] = array( $teacher );
+			$query['author__in'] = array( 0, $teacher );
 		}
 
 		return $query;
